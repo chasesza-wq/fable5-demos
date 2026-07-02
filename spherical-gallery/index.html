@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PHANTOM — Spherical Gallery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #000;
+    --fg: #fff;
+    --dim: #7a7a7a;
+    --pill: #1c1c1c;
+    --mono: "Space Mono", monospace;
+    --sans: "Inter", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--fg); font-family: var(--mono); }
+  #gl { position: fixed; inset: 0; cursor: grab; }
+  #gl.dragging { cursor: grabbing; }
+  #gl.hovering { cursor: pointer; }
+
+  /* ---------- UI chrome ---------- */
+  .ui { position: fixed; z-index: 10; pointer-events: none; }
+  .ui * { pointer-events: auto; }
+
+  .logo {
+    top: 24px; left: 24px; width: 62px; height: 88px;
+    border: 1px solid #2c4a2c; display: flex; align-items: center; justify-content: center;
+    background: #000;
+  }
+  .logo svg { width: 40px; height: 62px; }
+
+  .sound {
+    top: 28px; left: 42%; transform: translateX(-50%);
+    font-size: 12px; letter-spacing: .12em; color: var(--fg);
+    display: flex; gap: 12px; align-items: center; user-select: none; cursor: pointer;
+  }
+  .sound .bars { display: inline-flex; gap: 2px; }
+  .sound .bars i { width: 2px; height: 9px; background: #555; display: block; }
+
+  .tagline {
+    top: 26px; right: 480px;
+    font-size: 11.5px; line-height: 1.5; letter-spacing: .06em; color: var(--fg);
+    max-width: 230px; text-transform: uppercase;
+  }
+
+  .clocks {
+    top: 26px; right: 200px; font-size: 11.5px; letter-spacing: .06em;
+    text-align: left; line-height: 1.6; white-space: nowrap;
+  }
+  .clocks .row { display: flex; gap: 14px; align-items: center; }
+  .clocks .city { color: var(--dim); width: 118px; }
+  .clocks .city.lit { color: var(--fg); }
+  .clocks .dot { font-size: 9px; }
+  .clocks .time { color: var(--fg); }
+
+  .talk {
+    top: 22px; right: 24px;
+    background: #111; color: var(--fg); border: 1px solid #222;
+    font-family: var(--sans); font-size: 15.5px; font-weight: 500;
+    padding: 16px 30px; border-radius: 40px; cursor: pointer;
+    transition: background .3s, color .3s;
+  }
+  .talk:hover { background: var(--fg); color: #000; }
+
+  .views {
+    bottom: 24px; left: 24px; display: flex; gap: 10px;
+  }
+  .views button {
+    width: 46px; height: 46px; border-radius: 50%;
+    background: #141414; border: 1px solid #222; color: #888;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: color .3s, background .3s;
+  }
+  .views button.active { color: var(--fg); background: #1d1d1d; }
+  .views button:hover { color: var(--fg); }
+
+  .nav {
+    bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: rgba(16,16,16,.92); border: 1px solid #1e1e1e;
+    border-radius: 44px; padding: 7px; display: flex; align-items: center;
+    backdrop-filter: blur(12px);
+  }
+  .nav a {
+    font-family: var(--sans); font-size: 16px; font-weight: 500;
+    color: var(--fg); text-decoration: none; padding: 14px 28px; border-radius: 34px;
+    transition: background .3s;
+  }
+  .nav a.active { background: #1f1f1f; }
+  .nav a:hover { background: #191919; }
+
+  .hint {
+    bottom: 96px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; letter-spacing: .3em; color: #4a4a4a; text-transform: uppercase;
+    animation: hintFade 4s ease 3s forwards;
+  }
+  @keyframes hintFade { to { opacity: 0; } }
+
+  /* ---------- preloader ---------- */
+  #loader {
+    position: fixed; inset: 0; z-index: 60; background: #000;
+    display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 22px;
+  }
+  #loader .word { font-size: 13px; letter-spacing: .5em; color: var(--fg); text-transform: uppercase; }
+  #loader .bar { width: 180px; height: 1px; background: #1c1c1c; position: relative; overflow: hidden; }
+  #loader .bar i { position: absolute; inset: 0; background: var(--fg); transform: scaleX(0); transform-origin: left; display: block; }
+
+  /* ---------- detail page ---------- */
+  #detail {
+    position: fixed; inset: 0; z-index: 40; background: #000;
+    visibility: hidden; overflow: hidden;
+  }
+  #detail .inner { height: 100%; display: flex; flex-direction: column; padding: clamp(20px, 4vw, 56px); }
+  #detail .top { display: flex; justify-content: space-between; align-items: flex-start; }
+  #detail .back {
+    background: #141414; border: 1px solid #262626; color: var(--fg);
+    font-family: var(--sans); font-size: 15px; font-weight: 500;
+    padding: 14px 26px; border-radius: 40px; cursor: pointer; transition: background .3s, color .3s;
+  }
+  #detail .back:hover { background: var(--fg); color: #000; }
+  #detail .brand { font-size: 13px; letter-spacing: .15em; color: var(--dim); text-transform: uppercase; padding-top: 18px; }
+  #detail .title-wrap { overflow: hidden; margin-top: auto; }
+  #detail h1 {
+    font-family: var(--sans); font-weight: 600; letter-spacing: -.03em;
+    font-size: clamp(40px, 8vw, 120px); line-height: .95; text-transform: uppercase;
+  }
+  #detail .meta { display: flex; gap: 10px; align-items: center; margin-top: 26px; flex-wrap: wrap; }
+  #detail .meta .cat { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; margin-right: 8px; }
+  #detail .meta .tag {
+    font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+    background: var(--pill); border: 1px solid #2a2a2a; padding: 7px 14px; border-radius: 20px;
+  }
+  #detail .meta .year { margin-left: auto; color: var(--dim); font-size: 13px; }
+  #detail .hero {
+    margin-top: 34px; flex: 1; min-height: 0; border-radius: 6px; overflow: hidden; position: relative;
+  }
+  #detail .hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  #fade { position: fixed; inset: 0; z-index: 35; background: #000; opacity: 0; pointer-events: none; }
+
+  @media (max-width: 900px) {
+    .tagline, .clocks { display: none; }
+    .talk { padding: 12px 22px; font-size: 14px; }
+    .logo { width: 48px; height: 68px; }
+    .logo svg { width: 30px; height: 46px; }
+    .nav a { padding: 12px 20px; font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="gl"></canvas>
+
+<!-- UI chrome -->
+<div class="ui logo" aria-label="logo">
+  <svg viewBox="0 0 40 62" fill="none">
+    <path d="M20 2C10 2 4 10 4 21v37c0 1.4 1.6 2.2 2.7 1.3l4.4-3.6c.8-.6 1.9-.6 2.6 0l4.6 3.8c.9.8 2.3.8 3.2 0l4.6-3.8c.8-.6 1.9-.6 2.6 0l4.4 3.6c1.1.9 2.7.1 2.7-1.3V21C36 10 30 2 20 2Z" stroke="#fff" stroke-width="2.4"/>
+    <circle cx="14.5" cy="22" r="2.6" fill="#fff"/>
+    <circle cx="25.5" cy="22" r="2.6" fill="#fff"/>
+  </svg>
+</div>
+
+<div class="ui sound" id="soundBtn"><span class="bars"><i></i><i></i><i></i><i></i><i></i><i></i></span> SOUND [<span id="soundState">OFF</span>]</div>
+
+<div class="ui tagline">Phantom is a technology-led creative agency crafting experiences for global brands.</div>
+
+<div class="ui clocks">
+  <div class="row"><span class="dot">☾</span><span class="city">LONDON, UK</span><span class="time" id="clockLon">--:--</span> <span style="color:var(--dim)">GMT+1</span></div>
+  <div class="row"><span class="dot">●</span><span class="city lit">AUCKLAND, NZ</span><span class="time" id="clockAkl">--:--</span> <span style="color:var(--dim)">GMT+12</span></div>
+</div>
+
+<button class="ui talk">Let's Talk</button>
+
+<div class="ui views">
+  <button class="active" aria-label="grid view"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="0" y="0" width="7" height="7" rx="1.5"/><rect x="9" y="0" width="7" height="7" rx="1.5"/><rect x="0" y="9" width="7" height="7" rx="1.5"/><rect x="9" y="9" width="7" height="7" rx="1.5"/></svg></button>
+  <button aria-label="list view"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="0" y="1" width="16" height="2" rx="1"/><rect x="0" y="7" width="16" height="2" rx="1"/><rect x="0" y="13" width="16" height="2" rx="1"/></svg></button>
+</div>
+
+<nav class="ui nav">
+  <a href="#" class="active">Work</a>
+  <a href="#">About</a>
+  <a href="#">Careers</a>
+</nav>
+
+<div class="ui hint">Drag to explore &nbsp;·&nbsp; Click a project</div>
+
+<!-- transition fade -->
+<div id="fade"></div>
+
+<!-- detail page -->
+<section id="detail">
+  <div class="inner">
+    <div class="top">
+      <div class="brand" id="dBrand">GOOGLE</div>
+      <button class="back" id="dBack">&larr; Back to gallery</button>
+    </div>
+    <div class="title-wrap"><h1 id="dTitle">AI Compass</h1></div>
+    <div class="meta">
+      <span class="cat" id="dCat">Experience</span>
+      <span class="tag" id="dTag1">Website</span>
+      <span class="tag" id="dTag2">Content</span>
+      <span class="year" id="dYear">2024</span>
+    </div>
+    <div class="hero"><img id="dImg" src="" alt=""></div>
+  </div>
+</section>
+
+<!-- preloader -->
+<div id="loader">
+  <div class="word">Phantom</div>
+  <div class="bar"><i id="loadBar"></i></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script>
+(() => {
+  "use strict";
+
+  /* ================= data ================= */
+  const PROJECTS = [
+    { brand:"Google", title:"Visitor Experience Guide", cat:"Experience", tags:["Physical","Event"], year:"2017", seed:"campus" },
+    { brand:"NBCUniversal", title:"Bridget Jones OOH", cat:"Communication", tags:["OOH","Campaign"], year:"2025", seed:"street" },
+    { brand:"FT", title:"AI Compass", cat:"Experience", tags:["Website","Content"], year:"2024", seed:"sun" },
+    { brand:"Google", title:"Pixel for Travel", cat:"Communication", tags:["Illustration","Campaign"], year:"2025", seed:"gadgets" },
+    { brand:"Google", title:"Google Cloud BigQuery", cat:"Communication", tags:["Social","Campaign"], year:"2025", seed:"query" },
+    { brand:"Sony Music", title:"Free Spirits Center", cat:"Experience", tags:["3D","Motion"], year:"2026", seed:"stone" },
+    { brand:"Diageo", title:"Casamigos Global Travel", cat:"Communication", tags:["Illustration","3D"], year:"2025", seed:"bottles", accent:"#2f74c8" },
+    { brand:"Diageo", title:"Don Julio World Class", cat:"Communication", tags:["AI","Event"], year:"2025", seed:"agave" },
+    { brand:"Google", title:"Qibla Finder", cat:"Experience", tags:["3D","Event"], year:"2025", seed:"night" },
+    { brand:"Google", title:"Data & AI Trends", cat:"Communication", tags:["Social","Report"], year:"2024", seed:"data" },
+    { brand:"Diageo", title:"Johnnie Walker Festive", cat:"Experience", tags:["Tool","Campaign"], year:"2025", seed:"festive" },
+    { brand:"Google", title:"Pixel Singapore Takeover", cat:"Product", tags:["Campaign","Content"], year:"2025", seed:"city" },
+    { brand:"FT", title:"Climate Game", cat:"Experience", tags:["Website","3D"], year:"2023", seed:"climate" },
+    { brand:"Google", title:"The Amigos Bottle", cat:"Communication", tags:["3D","Motion"], year:"2024", seed:"amigos" },
+    { brand:"Phantom", title:"Pixel for Petra", cat:"Experience", tags:["Website","AR"], year:"2025", seed:"petra" },
+    { brand:"Sony Music", title:"Immersive Audio Lab", cat:"Experience", tags:["Sound","Install"], year:"2026", seed:"audio" },
+    { brand:"Google", title:"Gemini Live Video", cat:"Product", tags:["Campaign","Content"], year:"2025", seed:"gemini" },
+    { brand:"NBCUniversal", title:"Wicked Worldwide", cat:"Communication", tags:["OOH","3D"], year:"2024", seed:"wicked" },
+  ];
+
+  const COLS = 14;              // cells around the sphere
+  const ROWS = 5;               // vertical bands
+  const RADIUS = 30;
+  const THETA_MIN = Math.PI * 0.22;   // polar range (leave poles empty)
+  const THETA_MAX = Math.PI * 0.78;
+
+  /* ================= renderer / scene ================= */
+  const canvas = document.getElementById("gl");
+  let renderer, supported = true;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(innerWidth, innerHeight);
+  } catch (e) { supported = false; }
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000000);
+  const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 0);
+
+  /* vignette: darken toward edges via a big inner sphere fog imitation */
+  scene.fog = new THREE.Fog(0x000000, RADIUS * 0.72, RADIUS * 1.55);
+
+  /* ================= card textures ================= */
+  const TW = 900, TH = 720;
+  const cards = [];   // { mesh, data, redraw }
+  const group = new THREE.Group();
+  scene.add(group);
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawCard(ctx, p, img) {
+    // base
+    ctx.fillStyle = p.accent || "#050505";
+    ctx.fillRect(0, 0, TW, TH);
+    // grid border
+    ctx.strokeStyle = "#242424";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(1.5, 1.5, TW - 3, TH - 3);
+
+    // image (centered, ~55%)
+    if (img) {
+      const iw = TW * 0.52, ih = iw;
+      const ix = (TW - iw) / 2, iy = (TH - ih) / 2 - 14;
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,.6)";
+      ctx.shadowBlur = 40;
+      ctx.drawImage(img, ix, iy, iw, ih);
+      ctx.restore();
+    } else {
+      const iw = TW * 0.52;
+      ctx.fillStyle = "#0d0d0d";
+      ctx.fillRect((TW - iw) / 2, (TH - iw) / 2 - 14, iw, iw);
+    }
+
+    // brand top-left
+    ctx.fillStyle = "#fff";
+    ctx.font = "600 30px Inter, sans-serif";
+    ctx.textBaseline = "top";
+    ctx.fillText(p.brand, 34, 30);
+
+    // title top-right
+    ctx.font = "22px 'Space Mono', monospace";
+    ctx.fillStyle = "#d8d8d8";
+    ctx.textAlign = "right";
+    ctx.fillText(p.title.toUpperCase(), TW - 34, 36);
+    ctx.textAlign = "left";
+
+    // bottom row: category + tag pills
+    const by = TH - 66;
+    ctx.font = "21px 'Space Mono', monospace";
+    ctx.fillStyle = "#eee";
+    const cat = p.cat.toUpperCase();
+    ctx.fillText(cat, 34, by + 8);
+    let x = 34 + ctx.measureText(cat).width + 22;
+    p.tags.forEach(t => {
+      const label = t.toUpperCase();
+      const w = ctx.measureText(label).width + 40;
+      ctx.fillStyle = "rgba(40,40,40,.92)";
+      roundRect(ctx, x, by - 4, w, 44, 22);
+      ctx.fill();
+      ctx.fillStyle = "#e6e6e6";
+      ctx.fillText(label, x + 20, by + 8);
+      x += w + 12;
+    });
+    // year bottom-right
+    ctx.fillStyle = "#9a9a9a";
+    ctx.textAlign = "right";
+    ctx.fillText(p.year, TW - 34, by + 8);
+    ctx.textAlign = "left";
+  }
+
+  const imgURL = p => `https://picsum.photos/seed/${p.seed}/560/560`;
+
+  let loadedCount = 0, totalCells = COLS * ROWS;
+  function onCellReady() {
+    loadedCount++;
+    gsap.to("#loadBar", { scaleX: loadedCount / totalCells, duration: .3, ease: "power2.out", overwrite: true });
+  }
+
+  function buildCell(col, row) {
+    const p = PROJECTS[(row * COLS + col) % PROJECTS.length];
+    const cnv = document.createElement("canvas");
+    cnv.width = TW; cnv.height = TH;
+    const ctx = cnv.getContext("2d");
+    drawCard(ctx, p, null);
+
+    const tex = new THREE.CanvasTexture(cnv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = renderer ? renderer.capabilities.getMaxAnisotropy() : 1;
+    // BackSide flips horizontally — mirror the texture back
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.repeat.x = -1;
+
+    const phiLen = (Math.PI * 2) / COLS;
+    const thetaLen = (THETA_MAX - THETA_MIN) / ROWS;
+    const geo = new THREE.SphereGeometry(
+      RADIUS, 20, 14,
+      col * phiLen, phiLen,
+      THETA_MIN + row * thetaLen, thetaLen
+    );
+    const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide, fog: true });
+    mat.color.set(0xcfcfcf); // resting dim; hover brightens
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.userData = { project: p, ctx, tex, img: null };
+    group.add(mesh);
+    cards.push(mesh);
+
+    // async image
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => { mesh.userData.img = img; drawCard(ctx, p, img); tex.needsUpdate = true; onCellReady(); };
+    img.onerror = onCellReady;
+    img.src = imgURL(p);
+  }
+
+  if (supported) {
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        buildCell(c, r);
+  }
+
+  /* pole caps — solid black so you never see through */
+  if (supported) {
+    const capMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS, 24, 8, 0, Math.PI * 2, 0, THETA_MIN), capMat));
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS, 24, 8, 0, Math.PI * 2, THETA_MAX, Math.PI - THETA_MAX), capMat));
+  }
+
+  /* ================= camera control (lenis-style lerp) ================= */
+  let lon = 265, lat = 2;             // current
+  let tLon = 265, tLat = 2;           // target
+  let vLon = 0, vLat = 0;             // inertia velocity
+  let dragging = false, moved = 0;
+  let px = 0, py = 0;
+  let locked = false;                  // during detail view
+
+  const SENS = 0.135;
+  const LERP = 0.075;
+  const clampLat = v => Math.max(-38, Math.min(38, v));
+
+  canvas.addEventListener("pointerdown", e => {
+    if (locked) return;
+    dragging = true; moved = 0;
+    px = e.clientX; py = e.clientY;
+    vLon = vLat = 0;
+    canvas.classList.add("dragging");
+    canvas.setPointerCapture(e.pointerId);
+  });
+
+  canvas.addEventListener("pointermove", e => {
+    updatePointer(e);
+    if (!dragging || locked) return;
+    const dx = e.clientX - px, dy = e.clientY - py;
+    px = e.clientX; py = e.clientY;
+    moved += Math.abs(dx) + Math.abs(dy);
+    tLon -= dx * SENS;
+    tLat = clampLat(tLat + dy * SENS);
+    vLon = -dx * SENS;
+    vLat = dy * SENS;
+  });
+
+  canvas.addEventListener("pointerup", e => {
+    dragging = false;
+    canvas.classList.remove("dragging");
+    if (moved < 7 && !locked) tryOpen(e);
+  });
+  canvas.addEventListener("pointercancel", () => { dragging = false; canvas.classList.remove("dragging"); });
+
+  addEventListener("wheel", e => {
+    if (locked) return;
+    tLon += e.deltaX * 0.045 + (e.shiftKey ? e.deltaY * 0.045 : 0);
+    if (!e.shiftKey) tLat = clampLat(tLat + e.deltaY * 0.045);
+  }, { passive: true });
+
+  /* ================= raycast hover / click ================= */
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2(-2, -2);
+  let hovered = null;
+
+  function updatePointer(e) {
+    pointer.x = (e.clientX / innerWidth) * 2 - 1;
+    pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+  }
+
+  function pick() {
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(cards, false);
+    return hits.length ? hits[0].object : null;
+  }
+
+  function setHover(mesh) {
+    if (hovered === mesh) return;
+    if (hovered) gsap.to(hovered.material.color, { r: .81, g: .81, b: .81, duration: .4 });
+    hovered = mesh;
+    if (hovered) gsap.to(hovered.material.color, { r: 1.0, g: 1.0, b: 1.0, duration: .3 });
+    canvas.classList.toggle("hovering", !!hovered && !dragging);
+  }
+
+  /* ================= detail page transition ================= */
+  const detail = document.getElementById("detail");
+  const fade = document.getElementById("fade");
+  let activeCard = null;
+
+  function tryOpen(e) {
+    updatePointer(e);
+    const mesh = pick();
+    if (!mesh) return;
+    openDetail(mesh);
+  }
+
+  function openDetail(mesh) {
+    locked = true;
+    activeCard = mesh;
+    const p = mesh.userData.project;
+
+    // aim camera at the card center
+    mesh.geometry.computeBoundingSphere();
+    const c = mesh.geometry.boundingSphere.center;
+    const targetLat = THREE.MathUtils.radToDeg(Math.asin(c.y / c.length()));
+    let targetLon = THREE.MathUtils.radToDeg(Math.atan2(c.z, c.x));
+    // nearest wrap
+    while (targetLon - lon > 180) targetLon -= 360;
+    while (targetLon - lon < -180) targetLon += 360;
+
+    // populate detail DOM
+    document.getElementById("dBrand").textContent = p.brand.toUpperCase();
+    document.getElementById("dTitle").textContent = p.title;
+    document.getElementById("dCat").textContent = p.cat;
+    document.getElementById("dTag1").textContent = p.tags[0] || "";
+    document.getElementById("dTag2").textContent = p.tags[1] || "";
+    document.getElementById("dYear").textContent = p.year;
+    document.getElementById("dImg").src = `https://picsum.photos/seed/${p.seed}/1600/900`;
+
+    const tl = gsap.timeline();
+    tl.to({ }, {
+      duration: 1.1, ease: "power3.inOut",
+      onUpdate: function () {
+        const k = this.progress();
+        // ease targets toward the card while zooming
+        tLon = lon + (targetLon - lon) * .3;
+        tLat = clampLat(lat + (targetLat - lat) * .3);
+        void k;
+      }
+    }, 0);
+    tl.to(camera, { fov: 30, duration: 1.1, ease: "power3.inOut", onUpdate: () => camera.updateProjectionMatrix() }, 0);
+    tl.set(() => { tLon = targetLon; tLat = clampLat(targetLat); }, {}, 0);
+    tl.to(fade, { opacity: 1, duration: .55, ease: "power2.in" }, .55);
+    tl.set(detail, { visibility: "visible" });
+    tl.fromTo("#detail h1", { yPercent: 110 }, { yPercent: 0, duration: .9, ease: "power4.out" }, 1.15);
+    tl.fromTo("#detail .meta, #detail .top", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .7, stagger: .08, ease: "power3.out" }, 1.25);
+    tl.fromTo("#detail .hero", { opacity: 0, scale: .96 }, { opacity: 1, scale: 1, duration: .9, ease: "power3.out" }, 1.3);
+    tl.to(fade, { opacity: 0, duration: .4 }, 1.2);
+  }
+
+  function closeDetail() {
+    const tl = gsap.timeline({ onComplete: () => { locked = false; activeCard = null; } });
+    tl.to(fade, { opacity: 1, duration: .45, ease: "power2.in" });
+    tl.set(detail, { visibility: "hidden" });
+    tl.to(camera, { fov: 62, duration: 1.0, ease: "power3.inOut", onUpdate: () => camera.updateProjectionMatrix() }, .45);
+    tl.to(fade, { opacity: 0, duration: .6, ease: "power2.out" }, .55);
+  }
+  document.getElementById("dBack").addEventListener("click", closeDetail);
+  addEventListener("keydown", e => { if (e.key === "Escape" && locked) closeDetail(); });
+
+  /* ================= clocks ================= */
+  function tick() {
+    const f = tz => new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: tz }).format(new Date());
+    document.getElementById("clockLon").textContent = f("Europe/London");
+    document.getElementById("clockAkl").textContent = f("Pacific/Auckland");
+  }
+  tick(); setInterval(tick, 10000);
+
+  /* sound toggle (visual only) */
+  document.getElementById("soundBtn").addEventListener("click", () => {
+    const s = document.getElementById("soundState");
+    s.textContent = s.textContent === "OFF" ? "ON" : "OFF";
+  });
+
+  /* ================= resize ================= */
+  addEventListener("resize", () => {
+    if (!supported) return;
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+
+  /* ================= render loop ================= */
+  const DAMP = 0.94;
+  let idle = 0;
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function animate() {
+    requestAnimationFrame(animate);
+    if (!supported) return;
+
+    // inertia after release
+    if (!dragging && (Math.abs(vLon) > 0.001 || Math.abs(vLat) > 0.001)) {
+      tLon += vLon; tLat = clampLat(tLat + vLat);
+      vLon *= DAMP; vLat *= DAMP;
+    }
+    // gentle idle drift
+    if (!dragging && !locked && !reduced) { idle += 0.016; tLon += 0.006; }
+
+    // lenis-style lerp toward target
+    lon += (tLon - lon) * LERP;
+    lat += (tLat - lat) * LERP;
+
+    const phi = THREE.MathUtils.degToRad(90 - lat);
+    const theta = THREE.MathUtils.degToRad(lon);
+    camera.lookAt(
+      Math.sin(phi) * Math.cos(theta),
+      Math.cos(phi),
+      Math.sin(phi) * Math.sin(theta)
+    );
+
+    if (!dragging && !locked) setHover(pick());
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  /* ================= intro ================= */
+  window.addEventListener("load", () => {
+    gsap.to("#loadBar", { scaleX: 1, duration: .8, ease: "power2.inOut", delay: .6 });
+    const tl = gsap.timeline({ delay: 1.5 });
+    tl.to("#loader", { opacity: 0, duration: .7, ease: "power2.inOut", onComplete: () => document.getElementById("loader").remove() });
+    if (supported && !reduced) {
+      tl.fromTo(camera, { fov: 95 }, { fov: 62, duration: 2.2, ease: "power3.out", onUpdate: () => camera.updateProjectionMatrix() }, "<");
+      tl.from({ v: 0 }, { v: 1, duration: 2.2, onStart: () => { tLon += 24; }, ease: "power3.out" }, "<");
+    }
+    tl.from(".ui", { opacity: 0, y: 10, duration: .8, stagger: .06, ease: "power3.out" }, "-=1.6");
+  });
+
+  if (!supported) {
+    document.getElementById("loader").innerHTML = '<div class="word">WebGL unavailable</div>';
+  }
+})();
+</script>
+</body>
+</html>

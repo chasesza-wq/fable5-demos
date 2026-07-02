@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MERIDIAN® — Digital Design Studio</title>
+<meta name="description" content="MERIDIAN is a digital design studio building revenue-driving websites and interfaces for ambitious brands.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0b;
+  --bg2:#111113;
+  --ink:#f2f1ec;
+  --dim:#8a8a86;
+  --line:rgba(242,241,236,.10);
+  --acid:#d8ff3e;
+  --font-d:'Syne',sans-serif;
+  --font-b:'Space Grotesk',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+html{scroll-behavior:auto}
+html,body{overflow-x:hidden;background:var(--bg)}
+body{font-family:var(--font-b);color:var(--ink);line-height:1.5}
+::selection{background:var(--acid);color:#0a0a0b}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+.no-scroll{overflow:hidden;height:100vh}
+
+/* ---------- preloader ---------- */
+#preloader{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:flex-end;justify-content:space-between;padding:clamp(1.2rem,3vw,3rem)}
+#preloader .pl-word{font-family:var(--font-d);font-weight:800;font-size:clamp(1rem,2vw,1.4rem);letter-spacing:.35em;text-transform:uppercase}
+#preloader .pl-count{font-family:var(--font-d);font-weight:800;font-size:clamp(4rem,14vw,11rem);line-height:.85;color:transparent;-webkit-text-stroke:1px var(--acid)}
+#pl-bar{position:absolute;left:0;bottom:0;height:3px;width:0%;background:var(--acid)}
+
+/* ---------- cursor ---------- */
+#cursor{position:fixed;top:0;left:0;width:12px;height:12px;border-radius:50%;background:var(--acid);pointer-events:none;z-index:150;transform:translate(-50%,-50%);mix-blend-mode:difference;transition:width .25s,height .25s}
+#cursor.big{width:64px;height:64px}
+@media(hover:none){#cursor{display:none}}
+
+/* ---------- nav ---------- */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content:space-between;align-items:center;padding:clamp(1rem,2.5vw,1.8rem) clamp(1.2rem,3.5vw,3rem);mix-blend-mode:difference}
+nav .logo{font-family:var(--font-d);font-weight:800;font-size:1.05rem;letter-spacing:.18em}
+nav .logo sup{color:var(--acid);mix-blend-mode:normal}
+nav ul{display:flex;gap:2.2rem;list-style:none}
+nav ul a{font-size:.78rem;letter-spacing:.22em;text-transform:uppercase;opacity:.75;transition:opacity .25s}
+nav ul a:hover{opacity:1}
+@media(max-width:760px){nav ul{display:none}}
+nav .cta-mini{font-size:.78rem;letter-spacing:.22em;text-transform:uppercase;border:1px solid rgba(242,241,236,.4);border-radius:99px;padding:.55em 1.3em;transition:all .3s}
+nav .cta-mini:hover{background:var(--ink);color:#0a0a0b}
+
+/* ---------- hero ---------- */
+#hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 clamp(1.2rem,3.5vw,3rem) clamp(2rem,5vh,4rem);overflow:hidden}
+#gl{position:absolute;inset:0;z-index:0}
+#hero .hero-inner{position:relative;z-index:2}
+.h-kicker{display:flex;align-items:center;gap:.9rem;font-size:clamp(.68rem,1vw,.8rem);letter-spacing:.3em;text-transform:uppercase;color:var(--dim);margin-bottom:clamp(1rem,2.5vh,1.8rem)}
+.h-kicker::before{content:"";width:38px;height:1px;background:var(--acid)}
+h1{font-family:var(--font-d);font-weight:800;text-transform:uppercase;font-size:clamp(2.6rem,10.5vw,9.5rem);line-height:.92;letter-spacing:-.01em}
+h1 .line{display:block;overflow:hidden}
+h1 .line span{display:inline-block;transform:translateY(110%)}
+h1 .stroke{color:transparent;-webkit-text-stroke:1.5px var(--ink)}
+h1 .acid{color:var(--acid)}
+.hero-foot{display:flex;justify-content:space-between;align-items:flex-end;gap:2rem;margin-top:clamp(1.4rem,3.5vh,2.6rem);flex-wrap:wrap}
+.hero-foot p{max-width:34ch;color:var(--dim);font-size:clamp(.9rem,1.3vw,1.05rem);font-weight:300}
+.hero-foot p em{color:var(--ink);font-style:normal}
+.scroll-hint{font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:.7rem}
+.scroll-hint .dot{width:8px;height:8px;border-radius:50%;background:var(--acid);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+
+/* ---------- marquee ---------- */
+.marquee{border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;padding:1.1rem 0;background:var(--bg)}
+.marquee-track{display:flex;gap:3rem;width:max-content;will-change:transform}
+.marquee-track span{font-family:var(--font-d);font-weight:700;font-size:clamp(1rem,2vw,1.5rem);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;color:var(--dim)}
+.marquee-track span i{font-style:normal;color:var(--acid);margin-right:3rem}
+
+/* ---------- section chrome ---------- */
+section{position:relative}
+.wrap{padding:clamp(4rem,10vh,8rem) clamp(1.2rem,3.5vw,3rem)}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:1.5rem;margin-bottom:clamp(2.2rem,6vh,4.5rem);flex-wrap:wrap}
+.sec-tag{font-size:.72rem;letter-spacing:.32em;text-transform:uppercase;color:var(--acid)}
+h2{font-family:var(--font-d);font-weight:800;text-transform:uppercase;font-size:clamp(2rem,6vw,4.6rem);line-height:.95;margin-top:.6rem}
+.sec-head .side-note{max-width:30ch;color:var(--dim);font-size:.95rem;font-weight:300}
+
+/* ---------- stats ---------- */
+#stats{background:var(--bg2)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);border-left:1px solid var(--line)}
+.stat{border-right:1px solid var(--line);padding:clamp(1.4rem,3vw,2.8rem) clamp(1rem,2vw,2rem)}
+.stat .num{font-family:var(--font-d);font-weight:800;font-size:clamp(2.4rem,6vw,5.4rem);line-height:1;color:var(--ink)}
+.stat .num b{color:var(--acid);font-weight:800}
+.stat .lbl{margin-top:.9rem;font-size:.72rem;letter-spacing:.26em;text-transform:uppercase;color:var(--dim)}
+@media(max-width:760px){.stats-grid{grid-template-columns:1fr 1fr}.stat:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+
+/* ---------- gallery ---------- */
+.g-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(1.2rem,2.5vw,2.4rem)}
+@media(max-width:860px){.g-grid{grid-template-columns:1fr}}
+.g-card{position:relative;display:block}
+.g-card .g-frame{position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg2);transform-style:preserve-3d;transition:border-color .35s}
+.g-card:hover .g-frame{border-color:rgba(216,255,62,.45)}
+/* fake browser chrome */
+.b-bar{display:flex;align-items:center;gap:.45rem;padding:.65rem .9rem;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+.b-bar i{width:9px;height:9px;border-radius:50%;background:rgba(242,241,236,.18)}
+.b-bar .url{margin-left:.6rem;font-size:.62rem;letter-spacing:.06em;color:var(--dim);background:rgba(255,255,255,.04);border-radius:6px;padding:.28em .8em}
+/* fake site screen */
+.screen{aspect-ratio:16/10;position:relative;overflow:hidden;transition:transform .6s cubic-bezier(.22,1,.36,1)}
+.g-card:hover .screen{transform:scale(1.04)}
+.screen .s-hero{position:absolute;inset:0}
+.screen .s-title{position:absolute;left:7%;bottom:16%;font-family:var(--font-d);font-weight:800;text-transform:uppercase;line-height:.95;font-size:clamp(1.3rem,3.2vw,2.6rem)}
+.screen .s-nav{position:absolute;top:6%;left:7%;right:7%;display:flex;justify-content:space-between;align-items:center}
+.screen .s-nav .s-logo{width:34px;height:10px;border-radius:99px;background:rgba(255,255,255,.65)}
+.screen .s-nav .s-links{display:flex;gap:8px}
+.screen .s-nav .s-links i{width:22px;height:6px;border-radius:99px;background:rgba(255,255,255,.35)}
+.screen .s-bars{position:absolute;left:7%;bottom:7%;display:flex;gap:6px}
+.screen .s-bars i{height:6px;border-radius:99px;background:rgba(255,255,255,.4)}
+.screen .orb{position:absolute;border-radius:50%;filter:blur(2px)}
+/* themes */
+.t1 .s-hero{background:linear-gradient(135deg,#101418,#1d2b23 55%,#0c0f0d)}
+.t1 .s-title{color:#d8ff3e}
+.t1 .orb{width:46%;padding-top:46%;right:-10%;top:-16%;background:radial-gradient(circle at 35% 35%,#d8ff3e33,transparent 65%)}
+.t2 .s-hero{background:linear-gradient(150deg,#14101c,#33204d 60%,#120d18)}
+.t2 .s-title{color:#cdb6ff}
+.t2 .orb{width:52%;padding-top:52%;left:-12%;bottom:-22%;background:radial-gradient(circle at 60% 40%,#8f5cff40,transparent 62%)}
+.t3 .s-hero{background:linear-gradient(120deg,#0e1417,#0f3a3a 58%,#0a1214)}
+.t3 .s-title{color:#7dfbe0}
+.t3 .orb{width:44%;padding-top:44%;right:-8%;bottom:-16%;background:radial-gradient(circle at 40% 40%,#2ee6bb38,transparent 60%)}
+.t4 .s-hero{background:linear-gradient(140deg,#171010,#4d2a20 60%,#150e0c)}
+.t4 .s-title{color:#ffb38a}
+.t4 .orb{width:50%;padding-top:50%;left:-10%;top:-18%;background:radial-gradient(circle at 55% 55%,#ff7a4533,transparent 64%)}
+.t5 .s-hero{background:linear-gradient(160deg,#0f1118,#1e2a55 62%,#0c0e14)}
+.t5 .s-title{color:#9db8ff}
+.t5 .orb{width:48%;padding-top:48%;right:-12%;top:-10%;background:radial-gradient(circle at 45% 45%,#4d7bff38,transparent 62%)}
+.t6 .s-hero{background:linear-gradient(125deg,#131313,#3d3a2a 58%,#101010)}
+.t6 .s-title{color:#f2e39a}
+.t6 .orb{width:46%;padding-top:46%;left:-8%;bottom:-14%;background:radial-gradient(circle at 50% 50%,#e8d06033,transparent 62%)}
+/* meta */
+.g-meta{display:flex;justify-content:space-between;align-items:baseline;padding:1rem .2rem 0;gap:1rem}
+.g-meta .g-name{font-family:var(--font-d);font-weight:700;font-size:clamp(1rem,1.6vw,1.3rem);text-transform:uppercase;letter-spacing:.04em}
+.g-meta .g-idx{color:var(--dim);font-size:.72rem;letter-spacing:.2em}
+.g-meta .g-cat{color:var(--dim);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase}
+.g-result{margin-top:.35rem;padding:0 .2rem;font-size:.82rem;color:var(--dim);font-weight:300}
+.g-result b{color:var(--acid);font-weight:500}
+.g-more{margin-top:clamp(2.5rem,6vh,4rem);text-align:center;color:var(--dim);font-size:.85rem;letter-spacing:.18em;text-transform:uppercase}
+.g-more b{color:var(--ink)}
+
+/* ---------- services ---------- */
+#services{background:var(--bg2)}
+.svc{border-top:1px solid var(--line);display:grid;grid-template-columns:auto 1fr auto;gap:clamp(1rem,3vw,3rem);align-items:center;padding:clamp(1.4rem,3.5vh,2.4rem) 0;transition:padding-left .4s cubic-bezier(.22,1,.36,1)}
+.svc:last-child{border-bottom:1px solid var(--line)}
+.svc:hover{padding-left:clamp(.6rem,2vw,1.6rem)}
+.svc .s-num{font-size:.75rem;letter-spacing:.2em;color:var(--acid)}
+.svc h3{font-family:var(--font-d);font-weight:700;text-transform:uppercase;font-size:clamp(1.3rem,3.6vw,2.6rem);line-height:1}
+.svc p{color:var(--dim);font-size:.9rem;font-weight:300;max-width:44ch;margin-top:.5rem}
+.svc .s-arrow{font-family:var(--font-d);font-size:clamp(1.2rem,2.4vw,2rem);color:var(--dim);transition:color .3s,transform .4s}
+.svc:hover .s-arrow{color:var(--acid);transform:translateX(6px)}
+@media(max-width:640px){.svc{grid-template-columns:auto 1fr}.svc .s-arrow{display:none}}
+
+/* ---------- process strip ---------- */
+.proc{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.proc div{background:var(--bg);padding:clamp(1.3rem,2.5vw,2.2rem)}
+.proc b{display:block;font-family:var(--font-d);font-weight:700;text-transform:uppercase;font-size:1rem;margin:.9rem 0 .4rem}
+.proc i{font-style:normal;color:var(--acid);font-size:.72rem;letter-spacing:.24em}
+.proc p{color:var(--dim);font-size:.82rem;font-weight:300}
+@media(max-width:860px){.proc{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.proc{grid-template-columns:1fr}}
+
+/* ---------- contact ---------- */
+#contact{overflow:hidden}
+#contact .big-cta{font-family:var(--font-d);font-weight:800;text-transform:uppercase;font-size:clamp(2.6rem,11vw,10rem);line-height:.92;letter-spacing:-.01em}
+#contact .big-cta .stroke{color:transparent;-webkit-text-stroke:1.5px var(--ink);transition:color .4s,-webkit-text-stroke-color .4s}
+#contact a.mailto{display:inline-block;margin-top:clamp(1.8rem,4vh,3rem)}
+#contact a.mailto:hover .stroke{color:var(--acid);-webkit-text-stroke:1.5px var(--acid)}
+.contact-foot{display:flex;justify-content:space-between;gap:2rem;flex-wrap:wrap;margin-top:clamp(3rem,8vh,6rem);padding-top:2rem;border-top:1px solid var(--line);color:var(--dim);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase}
+.contact-foot .socials{display:flex;gap:1.6rem}
+.contact-foot a{transition:color .25s}
+.contact-foot a:hover{color:var(--acid)}
+
+/* reveal helpers */
+.rv{opacity:0;transform:translateY(46px)}
+@media(prefers-reduced-motion:reduce){
+  .rv{opacity:1;transform:none}
+  h1 .line span{transform:none}
+  *{animation-duration:.001s!important;transition-duration:.001s!important}
+}
+</style>
+</head>
+<body>
+
+<div id="preloader">
+  <div class="pl-word">Meridian® — Digital Design Studio</div>
+  <div class="pl-count">00</div>
+  <div id="pl-bar"></div>
+</div>
+<div id="cursor"></div>
+
+<nav>
+  <a class="logo" href="#hero">MERIDIAN<sup>®</sup></a>
+  <ul>
+    <li><a href="#work" data-hover>Work</a></li>
+    <li><a href="#services" data-hover>Services</a></li>
+    <li><a href="#contact" data-hover>Contact</a></li>
+  </ul>
+  <a class="cta-mini" href="#contact" data-hover>Start a project</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div id="gl"></div>
+  <div class="hero-inner">
+    <div class="h-kicker">Digital design studio — est. 2020</div>
+    <h1 aria-label="Design that pays for itself">
+      <span class="line"><span>Design that</span></span>
+      <span class="line"><span class="stroke">pays for</span></span>
+      <span class="line"><span><span class="acid">itself.</span></span></span>
+    </h1>
+    <div class="hero-foot">
+      <p>We build websites and interfaces engineered to <em>generate revenue</em> — not sit pretty. Strategy, design, and motion for brands that want to grow.</p>
+      <div class="scroll-hint"><span class="dot"></span> Scroll to explore</div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track" id="mq">
+    <span><i>✦</i>Web Design</span><span><i>✦</i>UI / UX</span><span><i>✦</i>Brand Systems</span><span><i>✦</i>Motion &amp; WebGL</span><span><i>✦</i>Conversion Strategy</span>
+    <span><i>✦</i>Web Design</span><span><i>✦</i>UI / UX</span><span><i>✦</i>Brand Systems</span><span><i>✦</i>Motion &amp; WebGL</span><span><i>✦</i>Conversion Strategy</span>
+  </div>
+</div>
+
+<!-- STATS -->
+<section id="stats">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div><div class="sec-tag">01 — Track record</div><h2>The numbers<br>do the talking</h2></div>
+      <p class="side-note">Every engagement is measured against one metric: did it make the client money.</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat rv"><div class="num"><span data-count="127">0</span><b>+</b></div><div class="lbl">Sites shipped</div></div>
+      <div class="stat rv"><div class="num"><span data-count="48">0</span><b>+</b></div><div class="lbl">Brands served</div></div>
+      <div class="stat rv"><div class="num"><span data-count="3.2">0</span><b>×</b></div><div class="lbl">Avg. conversion lift</div></div>
+      <div class="stat rv"><div class="num"><span data-count="14">0</span><b>+</b></div><div class="lbl">Design awards</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section id="work">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div><div class="sec-tag">02 — Selected builds</div><h2>Recent<br>work</h2></div>
+      <p class="side-note">A slice of the archive. Each build shipped with measurable outcomes attached.</p>
+    </div>
+    <div class="g-grid">
+      <a class="g-card rv" href="#contact" data-hover>
+        <div class="g-frame t1">
+          <div class="b-bar"><i></i><i></i><i></i><span class="url">verdantsupply.co</span></div>
+          <div class="screen"><div class="s-hero"><span class="orb"></span>
+            <div class="s-nav"><span class="s-logo"></span><span class="s-links"><i></i><i></i><i></i></span></div>
+            <div class="s-title">Verdant<br>Supply</div>
+            <div class="s-bars"><i style="width:54px"></i><i style="width:30px"></i></div>
+          </div></div>
+        </div>
+        <div class="g-meta"><span class="g-name">Verdant Supply</span><span class="g-cat">E-commerce</span><span class="g-idx">/01</span></div>
+        <div class="g-result">Rebuild + checkout redesign → <b>+212% online revenue</b> in 90 days</div>
+      </a>
+      <a class="g-card rv" href="#contact" data-hover>
+        <div class="g-frame t2">
+          <div class="b-bar"><i></i><i></i><i></i><span class="url">nocturnefest.com</span></div>
+          <div class="screen"><div class="s-hero"><span class="orb"></span>
+            <div class="s-nav"><span class="s-logo"></span><span class="s-links"><i></i><i></i><i></i></span></div>
+            <div class="s-title">Nocturne<br>Festival</div>
+            <div class="s-bars"><i style="width:44px"></i><i style="width:64px"></i></div>
+          </div></div>
+        </div>
+        <div class="g-meta"><span class="g-name">Nocturne Festival</span><span class="g-cat">Events</span><span class="g-idx">/02</span></div>
+        <div class="g-result">Immersive ticketing experience → <b>sold out in 11 days</b></div>
+      </a>
+      <a class="g-card rv" href="#contact" data-hover>
+        <div class="g-frame t3">
+          <div class="b-bar"><i></i><i></i><i></i><span class="url">haletide.health</span></div>
+          <div class="screen"><div class="s-hero"><span class="orb"></span>
+            <div class="s-nav"><span class="s-logo"></span><span class="s-links"><i></i><i></i><i></i></span></div>
+            <div class="s-title">Haletide<br>Health</div>
+            <div class="s-bars"><i style="width:60px"></i><i style="width:34px"></i></div>
+          </div></div>
+        </div>
+        <div class="g-meta"><span class="g-name">Haletide Health</span><span class="g-cat">SaaS</span><span class="g-idx">/03</span></div>
+        <div class="g-result">Landing system + onboarding UX → <b>+3.4× demo bookings</b></div>
+      </a>
+      <a class="g-card rv" href="#contact" data-hover>
+        <div class="g-frame t4">
+          <div class="b-bar"><i></i><i></i><i></i><span class="url">emberandoak.com</span></div>
+          <div class="screen"><div class="s-hero"><span class="orb"></span>
+            <div class="s-nav"><span class="s-logo"></span><span class="s-links"><i></i><i></i><i></i></span></div>
+            <div class="s-title">Ember<br>&amp; Oak</div>
+            <div class="s-bars"><i style="width:38px"></i><i style="width:56px"></i></div>
+          </div></div>
+        </div>
+        <div class="g-meta"><span class="g-name">Ember &amp; Oak</span><span class="g-cat">Hospitality</span><span class="g-idx">/04</span></div>
+        <div class="g-result">Booking-first redesign → <b>+87% table reservations</b></div>
+      </a>
+      <a class="g-card rv" href="#contact" data-hover>
+        <div class="g-frame t5">
+          <div class="b-bar"><i></i><i></i><i></i><span class="url">atlasledger.io</span></div>
+          <div class="screen"><div class="s-hero"><span class="orb"></span>
+            <div class="s-nav"><span class="s-logo"></span><span class="s-links"><i></i><i></i><i></i></span></div>
+            <div class="s-title">Atlas<br>Ledger</div>
+            <div class="s-bars"><i style="width:50px"></i><i style="width:28px"></i></div>
+          </div></div>
+        </div>
+        <div class="g-meta"><span class="g-name">Atlas Ledger</span><span class="g-cat">Fintech</span><span class="g-idx">/05</span></div>
+        <div class="g-result">Product site + dashboard UI → <b>+64% trial-to-paid</b></div>
+      </a>
+      <a class="g-card rv" href="#contact" data-hover>
+        <div class="g-frame t6">
+          <div class="b-bar"><i></i><i></i><i></i><span class="url">solstudio.gallery</span></div>
+          <div class="screen"><div class="s-hero"><span class="orb"></span>
+            <div class="s-nav"><span class="s-logo"></span><span class="s-links"><i></i><i></i><i></i></span></div>
+            <div class="s-title">Sol<br>Gallery</div>
+            <div class="s-bars"><i style="width:62px"></i><i style="width:40px"></i></div>
+          </div></div>
+        </div>
+        <div class="g-meta"><span class="g-name">Sol Gallery</span><span class="g-cat">Arts &amp; Culture</span><span class="g-idx">/06</span></div>
+        <div class="g-result">WebGL exhibition experience → <b>2.1M visits</b> opening month</div>
+      </a>
+    </div>
+    <div class="g-more rv">+ <b>121 more builds</b> in the archive — ask for the full deck</div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div><div class="sec-tag">03 — Capabilities</div><h2>What we<br>build</h2></div>
+      <p class="side-note">Full-stack design. One team from first sketch to shipped, revenue-tracked product.</p>
+    </div>
+    <div class="svc rv" data-hover>
+      <span class="s-num">/01</span>
+      <div><h3>Websites that sell</h3><p>Conversion-engineered marketing sites with awards-tier motion. Built to turn traffic into pipeline.</p></div>
+      <span class="s-arrow">→</span>
+    </div>
+    <div class="svc rv" data-hover>
+      <span class="s-num">/02</span>
+      <div><h3>Product &amp; UI/UX</h3><p>Interfaces for SaaS and apps — onboarding flows, dashboards, design systems that reduce churn and lift activation.</p></div>
+      <span class="s-arrow">→</span>
+    </div>
+    <div class="svc rv" data-hover>
+      <span class="s-num">/03</span>
+      <div><h3>Motion &amp; WebGL</h3><p>Signature interactive layers — Three.js scenes, shaders, scroll choreography — that make brands unforgettable.</p></div>
+      <span class="s-arrow">→</span>
+    </div>
+    <div class="svc rv" data-hover>
+      <span class="s-num">/04</span>
+      <div><h3>Brand systems</h3><p>Identity, typography, and art direction that hold together everywhere your customers meet you.</p></div>
+      <span class="s-arrow">→</span>
+    </div>
+
+    <div style="height:clamp(3rem,8vh,5.5rem)"></div>
+    <div class="proc rv">
+      <div><i>Week 1</i><b>Diagnose</b><p>Audit the funnel. Find where revenue leaks.</p></div>
+      <div><i>Week 2–3</i><b>Design</b><p>Concept, direction, and high-fidelity screens.</p></div>
+      <div><i>Week 4–5</i><b>Build</b><p>Motion, WebGL, and pixel-perfect development.</p></div>
+      <div><i>Ongoing</i><b>Grow</b><p>Measure, iterate, and compound the wins.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div><div class="sec-tag">04 — Contact</div></div>
+    </div>
+    <a class="mailto rv" href="mailto:hello@meridian.studio" data-hover>
+      <div class="big-cta">
+        <span class="stroke">Let’s make</span><br>your site<br><span class="stroke">make money.</span>
+      </div>
+    </a>
+    <div class="contact-foot rv">
+      <span>© 2026 Meridian® Studio</span>
+      <div class="socials">
+        <a href="#" data-hover>Instagram</a><a href="#" data-hover>X</a><a href="#" data-hover>LinkedIn</a><a href="#" data-hover>Dribbble</a>
+      </div>
+      <span>NYC — Miami — Remote</span>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+<script>
+(function(){
+"use strict";
+var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var touch = window.matchMedia("(hover: none)").matches;
+gsap.registerPlugin(ScrollTrigger);
+
+/* ---------- lenis smooth scroll ---------- */
+var lenis = null;
+try{
+  if(!reduced && typeof Lenis !== "undefined"){
+    lenis = new Lenis({ lerp:.1, smoothWheel:true });
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add(function(t){ lenis.raf(t*1000); });
+    gsap.ticker.lagSmoothing(0);
+    document.querySelectorAll('a[href^="#"]').forEach(function(a){
+      a.addEventListener("click", function(e){
+        var id = a.getAttribute("href");
+        if(id.length > 1 && document.querySelector(id)){
+          e.preventDefault();
+          lenis.scrollTo(id, { offset:0, duration:1.2 });
+        }
+      });
+    });
+  }
+}catch(e){}
+
+/* ---------- three.js hero: reactive wire-terrain ---------- */
+var mouse = { x:0, y:0 };
+try{
+  if(typeof THREE !== "undefined" && !reduced){
+    var holder = document.getElementById("gl");
+    var renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, powerPreference:"low-power" });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    holder.appendChild(renderer.domElement);
+
+    var scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x0a0a0b, 0.055);
+    var camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, .1, 100);
+    camera.position.set(0, 2.2, 7);
+    camera.lookAt(0, 0, 0);
+
+    // undulating wireframe terrain
+    var seg = touch ? 48 : 90;
+    var geo = new THREE.PlaneGeometry(30, 30, seg, seg);
+    var mat = new THREE.MeshBasicMaterial({ color:0xd8ff3e, wireframe:true, transparent:true, opacity: touch ? .10 : .13 });
+    var terrain = new THREE.Mesh(geo, mat);
+    terrain.rotation.x = -Math.PI/2;
+    terrain.position.y = -1.4;
+    scene.add(terrain);
+
+    // floating particles
+    var pCount = touch ? 120 : 320;
+    var pGeo = new THREE.BufferGeometry();
+    var pos = new Float32Array(pCount*3);
+    for(var i=0;i<pCount;i++){
+      pos[i*3]   = (Math.random()-.5)*22;
+      pos[i*3+1] = Math.random()*7 - 1;
+      pos[i*3+2] = (Math.random()-.5)*22;
+    }
+    pGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    var pMat = new THREE.PointsMaterial({ color:0xf2f1ec, size:.035, transparent:true, opacity:.55 });
+    var points = new THREE.Points(pGeo, pMat);
+    scene.add(points);
+
+    var base = geo.attributes.position.array.slice();
+    var scrollP = 0;
+    ScrollTrigger.create({
+      trigger:"#hero", start:"top top", end:"bottom top", scrub:true,
+      onUpdate:function(self){ scrollP = self.progress; }
+    });
+
+    var clock = new THREE.Clock();
+    (function tick(){
+      requestAnimationFrame(tick);
+      var t = clock.getElapsedTime();
+      var arr = geo.attributes.position.array;
+      for(var i=0;i<arr.length;i+=3){
+        var x = base[i], y = base[i+1];
+        arr[i+2] = Math.sin(x*.55 + t*.8)*Math.cos(y*.45 + t*.6)*(0.85 + scrollP*1.6);
+      }
+      geo.attributes.position.needsUpdate = true;
+      points.rotation.y = t*.02;
+      camera.position.x += ((mouse.x*1.1) - camera.position.x)*.04;
+      camera.position.y += ((2.2 - mouse.y*.7 + scrollP*2.4) - camera.position.y)*.04;
+      camera.lookAt(0, 0, 0);
+      renderer.render(scene, camera);
+    })();
+
+    window.addEventListener("resize", function(){
+      camera.aspect = window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  }
+}catch(e){ /* WebGL unavailable — static hero is fine */ }
+
+window.addEventListener("mousemove", function(e){
+  mouse.x = (e.clientX/window.innerWidth - .5)*2;
+  mouse.y = (e.clientY/window.innerHeight - .5)*2;
+});
+
+/* ---------- custom cursor ---------- */
+if(!touch){
+  var cur = document.getElementById("cursor");
+  var cx = -100, cy = -100, tx = -100, ty = -100;
+  window.addEventListener("mousemove", function(e){ tx = e.clientX; ty = e.clientY; });
+  gsap.ticker.add(function(){
+    cx += (tx-cx)*.18; cy += (ty-cy)*.18;
+    cur.style.transform = "translate("+(cx-0)+"px,"+(cy-0)+"px) translate(-50%,-50%)";
+  });
+  document.querySelectorAll("[data-hover]").forEach(function(el){
+    el.addEventListener("mouseenter", function(){ cur.classList.add("big"); });
+    el.addEventListener("mouseleave", function(){ cur.classList.remove("big"); });
+  });
+}else{
+  document.getElementById("cursor").style.display = "none";
+}
+
+/* ---------- preloader → intro ---------- */
+var plCount = document.querySelector(".pl-count");
+var plBar = document.getElementById("pl-bar");
+var pl = { v:0 };
+document.body.classList.add("no-scroll");
+
+var intro = gsap.timeline({ paused:true });
+intro
+  .to("#preloader", { yPercent:-100, duration:.9, ease:"power4.inOut" })
+  .set("#preloader", { display:"none" })
+  .to("h1 .line span", { y:0, duration:1.1, ease:"power4.out", stagger:.12 }, "-=.45")
+  .from(".h-kicker, .hero-foot", { opacity:0, y:24, duration:.8, ease:"power3.out", stagger:.12 }, "-=.7")
+  .from("nav", { opacity:0, y:-16, duration:.7, ease:"power3.out" }, "-=.6");
+
+gsap.to(pl, {
+  v:100, duration: reduced ? .1 : 1.7, ease:"power2.inOut",
+  onUpdate:function(){
+    var n = Math.round(pl.v);
+    plCount.textContent = (n<10?"0":"")+n;
+    plBar.style.width = n+"%";
+  },
+  onComplete:function(){
+    document.body.classList.remove("no-scroll");
+    intro.play();
+  }
+});
+
+/* ---------- marquee ---------- */
+if(!reduced){
+  var mq = document.getElementById("mq");
+  gsap.to(mq, { xPercent:-50, duration:22, ease:"none", repeat:-1 });
+}
+
+/* ---------- scroll reveals ---------- */
+document.querySelectorAll(".rv").forEach(function(el){
+  gsap.to(el, {
+    opacity:1, y:0, duration:1, ease:"power3.out",
+    scrollTrigger:{ trigger:el, start:"top 88%" }
+  });
+});
+
+/* ---------- counters ---------- */
+document.querySelectorAll("[data-count]").forEach(function(el){
+  var target = parseFloat(el.getAttribute("data-count"));
+  var dec = String(el.getAttribute("data-count")).indexOf(".") > -1 ? 1 : 0;
+  var o = { v:0 };
+  ScrollTrigger.create({
+    trigger:el, start:"top 90%", once:true,
+    onEnter:function(){
+      gsap.to(o, { v:target, duration:1.8, ease:"power2.out",
+        onUpdate:function(){ el.textContent = o.v.toFixed(dec); } });
+    }
+  });
+});
+
+/* ---------- gallery card tilt (desktop only) ---------- */
+if(!touch && !reduced){
+  document.querySelectorAll(".g-card").forEach(function(card){
+    var frame = card.querySelector(".g-frame");
+    card.addEventListener("mousemove", function(e){
+      var r = card.getBoundingClientRect();
+      var px = (e.clientX - r.left)/r.width - .5;
+      var py = (e.clientY - r.top)/r.height - .5;
+      gsap.to(frame, { rotationY:px*7, rotationX:-py*7, transformPerspective:900, duration:.5, ease:"power2.out" });
+    });
+    card.addEventListener("mouseleave", function(){
+      gsap.to(frame, { rotationY:0, rotationX:0, duration:.7, ease:"power3.out" });
+    });
+  });
+}
+})();
+</script>
+</body>
+</html>
